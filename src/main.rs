@@ -17,12 +17,14 @@ use std::f64;
 
 const ICON_PATH: &str = "../assets/icon.png";
 
+#[derive(Clone)]
 struct Window {
   scale: Scale,
   switch: Switch,
   adjustment: Adjustment
 }
 
+#[derive(Clone)]
 struct Application {
   window: Option<Window>
 }
@@ -60,7 +62,7 @@ impl Application {
   }
 }
 
-fn launch_application(application: &Application) {
+fn launch_application(application: Application) {
   let glade_src = include_str!("main.ui");
 
   if gtk::init().is_err() {
@@ -103,6 +105,7 @@ fn launch_application(application: &Application) {
 
   application.restore_configuration();
 
+  let app = application.clone();
   scale.connect_change_value(move |scale, _, value| {
     if value.fract() > 0.5 {
       scale.set_value(value.ceil());
@@ -110,7 +113,7 @@ fn launch_application(application: &Application) {
       scale.set_value(value.floor());
     }
 
-    application.save_configuration();
+    app.save_configuration();
 
     gtk::Inhibit(true)
   });
@@ -162,5 +165,5 @@ fn launch_application(application: &Application) {
 fn main() {
   let application: Application = Application::new();
 
-  launch_application(&application);
+  launch_application(application.clone());
 }
