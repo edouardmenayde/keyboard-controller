@@ -1,0 +1,13 @@
+[package]
+name = "keyboard-controller"
+version = "0.1.0"
+authors = ["Edouard Menayde <scrunshes@gmail.com>"]
+
+[dependencies]
+dbus = "0.5.2"
+time = "*"
+json = "*"
+
+[dependencies.gtk]
+version = "0.1.3"
+features = ["v3_20"]
