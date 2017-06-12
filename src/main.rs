@@ -2,27 +2,33 @@ extern crate dbus;
 extern crate gtk;
 #[macro_use]
 extern crate json;
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 
 mod keyboard_brightness;
 mod gnome_color_settings;
 mod core;
 mod utils;
 
+use utils::{ConfigurationBuilder, get_configuration, save_configuration};
 use core::{Time, time, is_night_time};
 use keyboard_brightness::{KeyboardBrightness};
 use gnome_color_settings::{GnomeColorSettings};
 use gtk::prelude::*;
-use gtk::{Builder, Switch, Scale, Adjustment};
+use gtk::{Switch, Scale, Adjustment};
 use std::f64;
 
 const ICON_PATH: &str = "../assets/icon.png";
 
+#[derive(Clone)]
 struct Window {
   scale: Scale,
   switch: Switch,
   adjustment: Adjustment
 }
 
+#[derive(Clone)]
 struct Application {
   window: Option<Window>
 }
@@ -36,35 +42,36 @@ impl Application {
 
   fn save_configuration(&self) {
     if let Some(ref window) = self.window {
-      let configuration = utils::ConfigurationBuilder::new()
+      let configuration = ConfigurationBuilder::new()
           .enabled(window.switch.get_state())
           .backlight_level(window.scale.get_value() as i32)
           .finalize();
 
-      utils::save_configuration(configuration.to_json());
+      save_configuration(configuration);
     }
   }
 
   fn restore_configuration(&self) {
     if let Some(ref window) = self.window {
-      let configuration = utils::get_configuration();
+      let configuration = get_configuration();
 
       window.adjustment.set_value(configuration.backlighting_level as f64);
       window.switch.set_state(configuration.enabled);
     }
   }
 
-
-  fn save_window(mut self, window: Window) {
+  fn save_window(&mut self, window: Window) {
     self.window = Some(window);
   }
 }
 
-fn launch_application(application: &Application) {
+fn launch_application() {
+  let mut application = Application::new();
+
   let glade_src = include_str!("main.ui");
 
   if gtk::init().is_err() {
-    println!("Failed to initialize GTK.");
+    error!("Failed to initialize GTK.");
     return;
   }
 
@@ -89,40 +96,48 @@ fn launch_application(application: &Application) {
   let adjustment: Adjustment = builder.get_object("keyboard-backlight-level").unwrap();
   let scale: Scale = builder.get_object("keyboard-backlight-scale").unwrap();
 
-  //  {
-  //    let scale = scale.clone();
-  //    let switch = switch.clone();
-  //    let adjustment = adjustment.clone();
-  //
-  //    application.save_window(Window {
-  //      scale: scale,
-  //      switch: switch,
-  //      adjustment: adjustment
-  //    });
-  //  }
-
-  application.restore_configuration();
-
-  scale.connect_change_value(move |scale, _, value| {
-    if value.fract() > 0.5 {
-      scale.set_value(value.ceil());
-    } else {
-      scale.set_value(value.floor());
-    }
-
-    application.save_configuration();
-
-    gtk::Inhibit(true)
-  });
-
-  switch.connect_state_set(move |_, _| {
-    application.save_configuration();
-
-    gtk::Inhibit(false)
-  });
-
   adjustment.set_upper(max);
   adjustment.set_lower(0f64);
+
+  {
+    let scale = scale.clone();
+    let switch = switch.clone();
+    let adjustment = adjustment.clone();
+
+    application.save_window(Window {
+      scale: scale,
+      switch: switch,
+      adjustment: adjustment
+    });
+
+    application.restore_configuration();
+  }
+
+  {
+    let application = application.clone();
+
+    scale.connect_change_value(move |scale, _, value| {
+      if value.fract() > 0.5 {
+        scale.set_value(value.ceil());
+      } else {
+        scale.set_value(value.floor());
+      }
+
+      application.save_configuration();
+
+      gtk::Inhibit(true)
+    });
+  }
+
+  {
+    switch.connect_state_set(move |switch, status| {
+      switch.set_state(status);
+
+      application.save_configuration();
+
+      gtk::Inhibit(true)
+    });
+  }
 
   window.connect_delete_event(|_, _| {
     gtk::main_quit();
@@ -160,7 +175,7 @@ fn launch_application(application: &Application) {
 }
 
 fn main() {
-  let application: Application = Application::new();
+  env_logger::init().unwrap();
 
-  launch_application(&application);
+  launch_application();
 }

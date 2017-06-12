@@ -7,7 +7,7 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::io;
 use std::io::{Write, Error, Read, Seek, SeekFrom};
-use std::fs::{File, metadata};
+use std::fs::{File, metadata, OpenOptions, remove_file};
 
 const CONFIG_FILE: &str = ".config/.keyboard-controller";
 
@@ -17,8 +17,6 @@ pub struct Configuration {
 }
 
 impl Configuration {
-  fn set_enabled() {}
-
   fn new() -> Configuration {
     Configuration {
       enabled: false,
@@ -55,7 +53,7 @@ impl Configuration {
   }
 }
 
-pub struct ConfigurationBuilder   {
+pub struct ConfigurationBuilder {
   pub enabled: bool,
   pub backlighting_level: i32
 }
@@ -96,26 +94,18 @@ fn get_home_dir() -> PathBuf {
   }
 }
 
-pub fn create_config_file() -> File {
-  let mut file = File::create(get_home_dir().deref().join(CONFIG_FILE)).unwrap();
-
-//  let empty_json_object = Configuration::new().to_json();
-//
-//  empty_json_object.write(&mut file);
-
-  file
-}
-
-pub fn do_get_config_file() -> File {
-  File::open(get_home_dir().deref().join(CONFIG_FILE)).unwrap()
+fn get_config_path() -> PathBuf {
+  get_home_dir().deref().join(CONFIG_FILE)
 }
 
 pub fn get_config_file() -> File {
-    if !metadata(CONFIG_FILE).map(|m| m.is_file()).unwrap_or(false) {
-      return create_config_file()
-    }
+  let config_path = get_config_path();
 
-  do_get_config_file()
+  if config_path.exists() {
+    return OpenOptions::new().write(true).read(true).open(config_path).unwrap()
+  }
+
+  File::create(get_config_path()).unwrap()
 }
 
 /// Need to handle json here and bad json
@@ -134,15 +124,19 @@ pub fn get_configuration() -> Configuration {
   }
 }
 
-pub fn save_configuration(configuration: JsonValue) {
+pub fn save_configuration(configuration: Configuration) {
+  let config_path = get_config_path();
+  remove_file(config_path).unwrap();
+
   let mut file = get_config_file();
 
-  match file.write_all(configuration.dump().as_bytes()) {
+  match file.write_all(configuration.to_json().dump().as_bytes()) {
     Ok(_) => {
-      println!("Configuration saved");
+      info!("Configuration saved");
+      info!("{}", configuration.to_json().dump());
     }
     Err(error) => {
-      println!("{}", error);
+      error!("{}", error);
     }
   }
 }

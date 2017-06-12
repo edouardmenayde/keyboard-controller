@@ -7,6 +7,8 @@ authors = ["Edouard Menayde <scrunshes@gmail.com>"]
 dbus = "0.5.2"
 time = "*"
 json = "*"
+log = "*"
+env_logger = "*"
 
 [dependencies.gtk]
 version = "0.1.3"
