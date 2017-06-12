@@ -5,6 +5,7 @@ extern crate json;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+use std::rc::Rc;
 
 mod keyboard_brightness;
 mod gnome_color_settings;
@@ -30,7 +31,7 @@ struct Window {
 
 #[derive(Clone)]
 struct Application {
-  window: Option<Window>
+  window: Option<Rc<Window>>
 }
 
 impl Application {
@@ -61,7 +62,7 @@ impl Application {
   }
 
   fn save_window(&mut self, window: Window) {
-    self.window = Some(window);
+    self.window = Some(Rc::new(window));
   }
 }
 
