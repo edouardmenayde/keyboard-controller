@@ -5,10 +5,11 @@ authors = ["Edouard Menayde <scrunshes@gmail.com>"]
 
 [dependencies]
 dbus = "0.5.2"
-time = "*"
+time = "0.1"
 json = "*"
 log = "*"
 env_logger = "*"
+gdk-pixbuf = "0.1.3"
 
 [dependencies.gtk]
 version = "0.1.3"

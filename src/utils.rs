@@ -1,36 +1,42 @@
 extern crate json;
 
+use core::{Time, is_night_time};
+
 use json::JsonValue;
 
 use std::env;
 use std::ops::Deref;
-use std::path::{Path, PathBuf};
-use std::io;
-use std::io::{Write, Error, Read, Seek, SeekFrom};
-use std::fs::{File, metadata, OpenOptions, remove_file};
+use std::path::PathBuf;
+use std::io::{Write, Read};
+use std::fs::{File, OpenOptions, remove_file};
 
 const CONFIG_FILE: &str = ".config/.keyboard-controller";
 
+const DEFAULT_START_TIME: Time = Time {
+  hours: 21,
+  minutes: 00
+};
+
+const DEFAULT_END_TIME: Time = Time {
+  hours: 07,
+  minutes: 00
+};
+
 pub struct Configuration {
   pub enabled: bool,
-  pub backlighting_level: i32
+  pub backlighting_level: i32,
+  pub start_time: Time,
+  pub end_time: Time
 }
 
 impl Configuration {
-  fn new() -> Configuration {
-    Configuration {
-      enabled: false,
-      backlighting_level: 0
-    }
-  }
-
   fn from_str(configuration: &str) -> Configuration {
     match json::parse(configuration) {
       Ok(configuration) => {
         Configuration::from_json(configuration)
       }
       Err(_) => {
-        Configuration::new()
+        ConfigurationBuilder::new().finalize()
       }
     }
   }
@@ -38,31 +44,42 @@ impl Configuration {
   fn from_json(input_config: JsonValue) -> Configuration {
     let enabled = input_config["enabled"].as_bool().unwrap_or(false);
     let backlighting_level = input_config["backlighting_level"].as_i32().unwrap_or(0);
+    let start_time = Time::from_string(input_config["start_time"].as_str().unwrap().to_string());
+    let end_time = Time::from_string(input_config["end_time"].as_str().unwrap().to_string());
+
 
     Configuration {
-      enabled: enabled,
-      backlighting_level: backlighting_level
+      enabled,
+      backlighting_level,
+      start_time,
+      end_time
     }
   }
 
   pub fn to_json(&self) -> JsonValue {
     object! {
       "enabled" => self.enabled,
-      "backlighting_level"=> self.backlighting_level
+      "backlighting_level" => self.backlighting_level,
+      "start_time" => self.start_time.to_string(),
+      "end_time" => self.end_time.to_string()
     }
   }
 }
 
 pub struct ConfigurationBuilder {
   pub enabled: bool,
-  pub backlighting_level: i32
+  pub backlighting_level: i32,
+  pub start_time: Time,
+  pub end_time: Time
 }
 
 impl ConfigurationBuilder {
   pub fn new() -> ConfigurationBuilder {
     ConfigurationBuilder {
       enabled: false,
-      backlighting_level: 0
+      backlighting_level: 0,
+      start_time: DEFAULT_START_TIME.clone(),
+      end_time: DEFAULT_END_TIME.clone()
     }
   }
 
@@ -78,10 +95,24 @@ impl ConfigurationBuilder {
     self
   }
 
+  pub fn start_time(&mut self, start_time: Time) -> &mut ConfigurationBuilder {
+    self.start_time = start_time;
+
+    self
+  }
+
+  pub fn end_time(&mut self, end_time: Time) -> &mut ConfigurationBuilder {
+    self.end_time = end_time;
+
+    self
+  }
+
   pub fn finalize(&self) -> Configuration {
     Configuration {
       enabled: self.enabled,
-      backlighting_level: self.backlighting_level
+      backlighting_level: self.backlighting_level,
+      start_time: self.start_time,
+      end_time: self.end_time
     }
   }
 }
@@ -102,7 +133,7 @@ pub fn get_config_file() -> File {
   let config_path = get_config_path();
 
   if config_path.exists() {
-    return OpenOptions::new().write(true).read(true).open(config_path).unwrap()
+    return OpenOptions::new().write(true).read(true).open(config_path).unwrap();
   }
 
   File::create(get_config_path()).unwrap()
@@ -119,7 +150,7 @@ pub fn get_configuration() -> Configuration {
       Configuration::from_str(configuration.as_str())
     }
     Err(_) => {
-      Configuration::new()
+      ConfigurationBuilder::new().finalize()
     }
   }
 }
