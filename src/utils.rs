@@ -47,7 +47,6 @@ impl Configuration {
     let start_time = Time::from_string(input_config["start_time"].as_str().unwrap().to_string());
     let end_time = Time::from_string(input_config["end_time"].as_str().unwrap().to_string());
 
-
     Configuration {
       enabled,
       backlighting_level,
@@ -57,6 +56,7 @@ impl Configuration {
   }
 
   pub fn to_json(&self) -> JsonValue {
+    println!("{}", self.end_time.to_string());
     object! {
       "enabled" => self.enabled,
       "backlighting_level" => self.backlighting_level,

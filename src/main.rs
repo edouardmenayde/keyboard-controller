@@ -14,7 +14,6 @@ use std::rc::Rc;
 use gdk_pixbuf::Pixbuf;
 
 mod keyboard_brightness;
-mod gnome_color_settings;
 mod core;
 mod utils;
 
@@ -22,7 +21,7 @@ use utils::{ConfigurationBuilder, get_configuration, save_configuration};
 use core::{Time, is_night_time};
 use keyboard_brightness::KeyboardBrightness;
 use gtk::prelude::*;
-use gtk::{Switch, Scale, Adjustment, StatusIcon, SpinButton, CssProvider, StyleContext};
+use gtk::{Switch, Scale, Adjustment, StatusIcon, SpinButton, CssProvider, StyleContext, Button};
 use std::f64;
 
 const ICON_PATH: &str = "assets/icon.png";
@@ -77,8 +76,10 @@ impl Application {
 
       window.adjustment.set_value(configuration.backlighting_level as f64);
       window.switch.set_state(configuration.enabled);
+
       window.start_hour_spin.set_value(configuration.start_time.hours as f64);
       window.start_minute_spin.set_value(configuration.start_time.minutes as f64);
+
       window.end_hour_spin.set_value(configuration.end_time.hours as f64);
       window.end_minute_spin.set_value(configuration.end_time.minutes as f64);
     }
@@ -127,11 +128,13 @@ fn launch_application() {
   let start_hour_spin: SpinButton = builder.get_object("keyboard-start-hour").unwrap();
   let start_minute_spin: SpinButton = builder.get_object("keyboard-start-minute").unwrap();
 
-  let end_hour_spin: SpinButton = builder.get_object("keyboard-start-minute").unwrap();
-  let end_minute_spin: SpinButton = builder.get_object("keyboard-start-minute").unwrap();
+  let end_hour_spin: SpinButton = builder.get_object("keyboard-end-hour").unwrap();
+  let end_minute_spin: SpinButton = builder.get_object("keyboard-end-minute").unwrap();
 
   adjustment.set_upper(upper);
   adjustment.set_lower(LOWER);
+
+  let save_button: Button = builder.get_object("save_button").unwrap();
 
   {
     let scale = scale.clone();
@@ -158,62 +161,24 @@ fn launch_application() {
   {
     let application = application.clone();
 
+    let save_button = save_button.clone();
+
+    save_button.connect_clicked(move |_| {
+      application.save_configuration();
+
+      gtk::Inhibit(false);
+    });
+  }
+
+  {
+    let application = application.clone();
+
     scale.connect_change_value(move |scale, _, value| {
       if value.fract() > 0.5 {
         scale.set_value(value.ceil());
       } else {
         scale.set_value(value.floor());
       }
-
-      application.save_configuration();
-
-      gtk::Inhibit(true)
-    });
-  }
-
-  {
-    let application = application.clone();
-
-    start_hour_spin.connect_change_value(move |_, _| {
-      application.save_configuration();
-
-      gtk::Inhibit(false);
-    });
-  }
-
-  {
-    let application = application.clone();
-
-    start_minute_spin.connect_change_value(move |_, _| {
-      application.save_configuration();
-
-      gtk::Inhibit(false);
-    });
-  }
-
-  {
-    let application = application.clone();
-
-    end_hour_spin.connect_change_value(move |_, _| {
-      application.save_configuration();
-
-      gtk::Inhibit(false);
-    });
-  }
-
-  {
-    let application = application.clone();
-
-    end_minute_spin.connect_change_value(move |_, _| {
-      application.save_configuration();
-
-      gtk::Inhibit(false);
-    });
-  }
-
-  {
-    switch.connect_state_set(move |switch, status| {
-      switch.set_state(status);
 
       application.save_configuration();
 
