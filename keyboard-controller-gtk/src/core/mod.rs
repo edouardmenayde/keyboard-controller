@@ -1,8 +1,11 @@
 extern crate time;
+extern crate gtk;
 
-use time::Tm;
+use self::time::Tm;
 
 use std::str::FromStr;
+
+use self::gtk::{SpinButton};
 
 #[derive(Copy, Clone)]
 pub struct Time {
@@ -41,7 +44,6 @@ impl Time {
   }
 }
 
-
 pub trait IsBetween {
   fn is_between(&self, start: &Time, end: &Time) -> bool;
 }
@@ -66,4 +68,11 @@ impl IsBetween for Tm {
 
 pub fn is_night_time(now: &Tm, start: &Time, end: &Time) -> bool {
   now.is_between(start, end)
+}
+
+pub fn construct_time(hour_spin: &SpinButton, minute_spin: &SpinButton) -> Time {
+  Time {
+    hours: hour_spin.get_value() as i32,
+    minutes: minute_spin.get_value() as i32
+  }
 }
