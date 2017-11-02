@@ -1,13 +1,11 @@
+dist: trusty
+
+services:
+  - docker
+
 language: rust
-rust:
-  - stable
-  - beta
-  - nightly
-matrix:
-  allow_failures:
-    - rust: nightly
 
 cache: cargo
 
 script:
-  - cargo build --verbose --all
+  - docker build -t app .
