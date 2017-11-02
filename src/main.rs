@@ -21,7 +21,8 @@ use utils::{ConfigurationBuilder, get_configuration, save_configuration};
 use core::{Time, is_night_time};
 use keyboard_brightness::KeyboardBrightness;
 use gtk::prelude::*;
-use gtk::{Switch, Scale, Adjustment, StatusIcon, SpinButton, CssProvider, StyleContext, Button};
+use gtk::{Switch, Scale, Adjustment, StatusIcon, SpinButton, CssProvider, StyleContext, Button,
+          Menu, MenuItem, timeout_add_seconds, Inhibit};
 use std::f64;
 
 const ICON_PATH: &str = "assets/icon.png";
@@ -125,11 +126,11 @@ fn launch_application() {
   let adjustment: Adjustment = builder.get_object("keyboard-backlight-level").unwrap();
   let scale: Scale = builder.get_object("keyboard-backlight-scale").unwrap();
 
-  let start_hour_spin: SpinButton = builder.get_object("keyboard-start-hour").unwrap();
-  let start_minute_spin: SpinButton = builder.get_object("keyboard-start-minute").unwrap();
+  let start_hour_spin: SpinButton = builder.get_object("lighting-start-hour").unwrap();
+  let start_minute_spin: SpinButton = builder.get_object("lighting-start-minute").unwrap();
 
-  let end_hour_spin: SpinButton = builder.get_object("keyboard-end-hour").unwrap();
-  let end_minute_spin: SpinButton = builder.get_object("keyboard-end-minute").unwrap();
+  let end_hour_spin: SpinButton = builder.get_object("lighting-end-hour").unwrap();
+  let end_minute_spin: SpinButton = builder.get_object("lighting-end-minute").unwrap();
 
   adjustment.set_upper(upper);
   adjustment.set_lower(LOWER);
@@ -166,7 +167,7 @@ fn launch_application() {
     save_button.connect_clicked(move |_| {
       application.save_configuration();
 
-      gtk::Inhibit(false);
+      Inhibit(false);
     });
   }
 
@@ -182,7 +183,7 @@ fn launch_application() {
 
       application.save_configuration();
 
-      gtk::Inhibit(true)
+      Inhibit(true)
     });
   }
 
@@ -192,19 +193,25 @@ fn launch_application() {
     Inhibit(false)
   });
 
-  let status_icon: StatusIcon;
+  let icon = Pixbuf::new_from_file(ICON_PATH).unwrap();
 
-  match Pixbuf::new_from_file(ICON_PATH) {
-    Ok(icon) => {
-      status_icon = StatusIcon::new_from_pixbuf(&icon);
-      status_icon.set_visible(true);
-    }
-    Err(error) => {
-      error!("Error displaying icon : {}", error);
-    }
-  }
+  let status_icon = StatusIcon::new_from_pixbuf(&icon);
+  status_icon.set_visible(true);
 
-  gtk::timeout_add_seconds(1, move || {
+  let popup_menu = Menu::new();
+  let pause = MenuItem::new_with_label("Pause");
+  let exit = MenuItem::new_with_label("Exit");
+
+  popup_menu.append(&pause);
+  popup_menu.append(&exit);
+
+  popup_menu.show_all();
+
+  status_icon.connect_popup_menu(move |_icon: &StatusIcon, button: u32, activate_time: u32| {
+    popup_menu.popup_easy(button, activate_time);
+  });
+
+  timeout_add_seconds(1, move || {
     let start_time = construct_time(&start_hour_spin, &start_minute_spin);
     let end_time = construct_time(&end_hour_spin, &end_minute_spin);
 

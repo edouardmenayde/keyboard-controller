@@ -1,6 +1,6 @@
 extern crate json;
 
-use core::{Time, is_night_time};
+use core::{Time};
 
 use json::JsonValue;
 
@@ -56,7 +56,6 @@ impl Configuration {
   }
 
   pub fn to_json(&self) -> JsonValue {
-    println!("{}", self.end_time.to_string());
     object! {
       "enabled" => self.enabled,
       "backlighting_level" => self.backlighting_level,
