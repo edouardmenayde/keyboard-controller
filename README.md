@@ -1,10 +1,7 @@
 # Keyboard Controller
 
-```
-I love keyboard backlighting but always forget to turn it on when it's night and hate it when it's on at day...
-```
-
-The aim of this project is to answer this problem.
+The aim of this project is to have a keyboard backlighting that adapts to the light of the day : redshift / f.lux for
+ the keyboard.
 
 ## Using
 
@@ -15,5 +12,5 @@ The aim of this project is to answer this problem.
 ### Getting started
 
 ```shell
-cargo run
+cargo run -p keyboard-controller-gtk
 ```
