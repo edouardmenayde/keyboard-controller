@@ -1,11 +1,8 @@
 dist: trusty
-
 services:
-  - docker
-
-language: rust
-
-cache: cargo
-
+- docker
 script:
-  - docker build -t app .
+- docker build -t app .
+notifications:
+  slack:
+    secure: iPV/pg+Doc4YYuvX3Kla5u+Bf/FGk/4zXz0NFZcpBgxFXuw6KFZP9lxz66T1UQMiCTULi/LTflE4vrbeaATO4d6nWrJO2c1vc3Gx1dDJf/HSE5DIGG2T6T5ODGd9cjnHm7D9b+F2KIgKQ+iL8gQ7Eq2dMoUgfQSJh5quPne69B09VZ7vJ9W0ktU1GDeoWvZHhu+TM1bP1QwUTRwQiuL0K1EpmQKbf2Fo8MvgeeH+o6JM7NZukW5dvPUFAbHIQO6GVIppN6EUJ7BZ2LO8vEJWYcpm/HXpZvK/gHVzNAKGJ8WDC8vOIClUNCaSJlxnNPmqDdQMm22eoRiVerPXER2T1mi+zDLLat2ojZW574m5jTR1U7OjXKg4aDslRNHY5qchMK4PdgnABG0TBsIzzQHqY63SO3UVFEchQgViMZycF8dwY8ax3DaARt/RSh2kljkKsXdSo4fwNlUwIXR2ROX62OqPrKDw3dD4eMBhF5lIrFSbAmfNyqinwSaBSX/xTQnimBW9U3m+sQ9yt4EogDVSRswKP77EMweDfGz26qQAASIdeQ/9QmpbxccVQWcZQvOe9xw+f6ve5D1+wRJQ/Ru/OSFZrM40MvCKjnQhHm7f7T/YOG8P+W+coEH0jbF0uTHVfIxGl0Jf96pTloMnEIHD2fXj1pvItPVYNRREKCMJL08=
